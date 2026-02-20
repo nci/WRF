@@ -1,11 +1,193 @@
-### WRF-ARW Modeling System  ###
+# WRF Compilation Guide (Gadi)
 
-We request that all new users of WRF please register. This allows us to better determine how to support and develop the model. Please register using this form:[https://www2.mmm.ucar.edu/wrf/users/download/wrf-regist.php](https://www2.mmm.ucar.edu/wrf/users/download/wrf-regist.php).
+This guide describes how to configure and compile WRF on Gadi using PBS.
 
-For an overview of the WRF modeling system, along with information regarding downloads, user support, documentation, publications, and additional resources, please see the WRF Model Users' Web Site: [https://www2.mmm.ucar.edu/wrf/users/](https://www2.mmm.ucar.edu/wrf/users/).
- 
-Information regarding WRF Model citations (including a DOI) can be found here: [https://www2.mmm.ucar.edu/wrf/users/citing_wrf.html](https://www2.mmm.ucar.edu/wrf/users/citing_wrf.html).
+---
 
-The WRF Model is open-source code in the public domain, and its use is unrestricted. The name "WRF", however, is a registered trademark of the University Corporation for Atmospheric Research. The WRF public domain notice and related information may be found here: [https://www2.mmm.ucar.edu/wrf/users/public.html](https://www2.mmm.ucar.edu/wrf/users/public.html).
+## 1. Load Environment
 
+```bash
+source build.env
+```
 
+Optional:
+
+### Enable NetCDF4
+```bash
+export NETCDF4=1
+```
+
+### Enable WRF-Chem
+```bash
+export WRF_CHEM=1
+```
+
+---
+
+## 2. Clean Previous Build (Optional but Recommended)
+
+```bash
+./clean -a
+```
+
+---
+
+## 3. Configure WRF
+
+Run:
+
+```bash
+./configure
+```
+
+When prompted, enter:
+
+- **Architecture option** (e.g. `79`)
+- **Nest option** (e.g. `1`)
+
+### Common Architecture Options (Gadi)
+
+| Option | Parallel Mode | Optimisation |
+|--------|--------------|--------------|
+| 76 | serial | -O2 |
+| 77 | smpar | -O2 |
+| 78 | dmpar | -O2 |
+| 79 | sm+dm | -O2 |
+| 72 | serial | -O3 |
+| 73 | smpar | -O3 |
+| 74 | dmpar | -O3 |
+| 75 | sm+dm | -O3 |
+
+**Recommended (most users):**
+
+```
+79
+1
+```
+
+---
+
+## 4. Submit Compilation Job
+
+Create a PBS job file:
+
+```bash
+nano compile.pbs
+```
+
+Paste the following:
+
+```bash
+#!/bin/bash
+#PBS -l walltime=3:30:00
+#PBS -l mem=28GB
+#PBS -l ncpus=7
+#PBS -j oe
+#PBS -q normalsr
+#PBS -l wd
+#PBS -W umask=0022
+#PBS -l software=intel-compiler
+
+source build.env
+
+# Use half available CPUs for make
+export J="-j $(( PBS_NCPUS / 2 ))"
+
+echo "Starting WRF compilation..."
+./compile em_real
+```
+
+Submit the job:
+
+```bash
+qsub compile.pbs
+```
+
+---
+
+## 5. Monitor Compilation
+
+```bash
+qstat
+```
+
+After completion, check for:
+
+```
+WRF/main/wrf.exe
+WRF/main/real.exe
+```
+
+---
+
+## 6. Compile Variants
+
+### Compile WRF-Chem
+
+```bash
+export WRF_CHEM=1
+./configure
+qsub compile.pbs
+```
+
+### Compile a Different Case
+
+Edit the PBS file and replace:
+
+```bash
+./compile em_real
+```
+
+with:
+
+```bash
+./compile em_quarter_ss
+```
+
+---
+
+## 7. Quick Workflow (Minimal Commands)
+
+```bash
+source build.env
+./clean -a
+./configure
+qsub compile.pbs
+```
+
+---
+
+## Notes
+
+- Do **not** compile on login nodes.
+- Use `normalsr` or an appropriate queue.
+- Typical compile time: 30–40 minutes.
+- Use `-O3` options (72–75) for maximum performance builds.
+- Ensure your project storage is correctly declared in the PBS `#PBS -l storage=` line if required.
+
+---
+
+## Optional: Debug Build
+
+For debugging (no optimisation):
+
+```bash
+./configure -d
+```
+
+For full debug with floating traps:
+
+```bash
+./configure -D
+```
+
+---
+
+## Optional: Compile Without PBS (Not Recommended on Login Nodes)
+
+```bash
+export J="-j 4"
+./compile em_real
+```
+
+Only use this on compute nodes or interactive jobs.
