@@ -1,0 +1,18 @@
+#!/bin/bash
+#PBS -l walltime=3:30:00
+#PBS -l mem=52GB
+#PBS -l ncpus=13
+#PBS -j oe
+#PBS -q normalsr
+#PBS -l wd
+#PBS -W umask=0022
+#PBS -l software=intel-compiler-llvm
+#PBS -l storage=gdata/YOUR_PROJECT
+
+source build.env
+
+# Use half available CPUs for make
+export J="-j $(( PBS_NCPUS / 2 ))"
+
+echo "Starting WRF compilation..."
+./compile em_real
