@@ -72,7 +72,9 @@ When prompted, enter:
 79
 1
 ```
+
 It will create a file named "configure.wrf".
+
 ---
 
 ## 4. Submit Compilation Job
