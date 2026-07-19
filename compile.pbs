@@ -6,13 +6,13 @@
 #PBS -q normalsr
 #PBS -l wd
 #PBS -W umask=0022
-#PBS -l software=intel-compiler-llvm
-#PBS -l storage=gdata/YOUR_PROJECT
+#PBS -l software=intel-compiler
+#PBS -l storage=gdata/YOUR_PROJECT_ID
 
 source build.env
-
+export WRF_CHEM=1
 # Use half available CPUs for make
-export J="-j $(( PBS_NCPUS / 2 ))"
+export J="-j 1"
 
 echo "Starting WRF compilation..."
 ./compile em_real

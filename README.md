@@ -4,17 +4,9 @@ This guide describes how to configure and compile WRF on Gadi using PBS.
 
 ---
 
-## 0. Clone the repo
-```bash
-git clone git@github.com:nci/WRF.git
-```
-
----
-
 ## 1. Load Environment
 
 ```bash
-cd WRF
 source build.env
 ```
 
@@ -66,43 +58,40 @@ When prompted, enter:
 | 74 | dmpar | -O3 |
 | 75 | sm+dm | -O3 |
 
-**Recommended (most users) and Verified:**
+**Recommended (most users):**
 
 ```
 79
 1
 ```
 
-It will create a file named "configure.wrf".
-
 ---
 
 ## 4. Submit Compilation Job
 
-Revise the PBS job file compile.pbs:
+Create a PBS job file:
 
 ```bash
 nano compile.pbs
 ```
 
-Change the YOUR_PROEJCT to your own NCI project with SU allocations:
+Paste the following:
 
 ```bash
 #!/bin/bash
 #PBS -l walltime=3:30:00
-#PBS -l mem=28GB
-#PBS -l ncpus=7
+#PBS -l mem=52GB
+#PBS -l ncpus=13
 #PBS -j oe
 #PBS -q normalsr
 #PBS -l wd
 #PBS -W umask=0022
 #PBS -l software=intel-compiler
-#PBS -l storage=gdata/YOUR_PORJECT
 
 source build.env
-
+export WRF_CHEM=1
 # Use half available CPUs for make
-export J="-j $(( PBS_NCPUS / 2 ))"
+export J="-j 1"
 
 echo "Starting WRF compilation..."
 ./compile em_real
@@ -127,9 +116,32 @@ After completion, check for:
 ```
 WRF/main/wrf.exe
 WRF/main/real.exe
-WRF/main/tc.exe
-WRF/main/ndown.exe
+```
 
+---
+
+## 6. Compile Variants
+
+### Compile WRF-Chem
+
+```bash
+export WRF_CHEM=1
+./configure
+qsub compile.pbs
+```
+
+### Compile a Different Case
+
+Edit the PBS file and replace:
+
+```bash
+./compile em_real
+```
+
+with:
+
+```bash
+./compile em_quarter_ss
 ```
 
 ---
@@ -150,9 +162,32 @@ qsub compile.pbs
 - Do **not** compile on login nodes.
 - Use `normalsr` or an appropriate queue.
 - Typical compile time: 30–40 minutes.
-- Use `-O3` options for maximum performance builds.
+- Use `-O3` options (72–75) for maximum performance builds.
 - Ensure your project storage is correctly declared in the PBS `#PBS -l storage=` line if required.
 
+---
 
+## Optional: Debug Build
 
+For debugging (no optimisation):
 
+```bash
+./configure -d
+```
+
+For full debug with floating traps:
+
+```bash
+./configure -D
+```
+
+---
+
+## Optional: Compile Without PBS (Not Recommended on Login Nodes)
+
+```bash
+export J="-j 4"
+./compile em_real
+```
+
+Only use this on compute nodes or interactive jobs.
