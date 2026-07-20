@@ -4,6 +4,13 @@ This guide describes how to configure and compile WRF on Gadi using PBS.
 
 ---
 
+## Clone the repo with specific version.
+
+```bash
+git clone --recursive -b v4.7.1 git@github.com:nci/WRF.git
+cd WRF
+```
+
 ## 1. Load Environment
 
 ```bash
